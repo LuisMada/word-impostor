@@ -35,6 +35,7 @@
   border-radius: 8px;
   font-size: 16px;
   transition: border-color 0.3s ease;
+  box-sizing: border-box;
 }
 
 .form-group input:focus,
@@ -54,14 +55,23 @@
 .input-group {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .input-group input {
   flex: 1;
+  min-width: 150px;
+  padding: 12px;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
+  box-sizing: border-box;
 }
 
 .input-group button {
-  min-width: 80px;
+  flex-shrink: 0;
+  min-width: 70px;
+  padding: 12px 16px;
 }
 
 .players-section {
@@ -83,6 +93,7 @@
   justify-content: space-between;
   align-items: center;
   background: white;
+  gap: 12px;
 }
 
 .player-item:last-child {
@@ -92,20 +103,36 @@
 .player-item span {
   font-weight: 500;
   color: #333;
+  flex: 1;
+  word-break: break-word;
 }
 
 .btn-remove {
   background: #ff6b6b;
   color: white;
-  padding: 4px 8px;
+  padding: 6px 12px;
   font-size: 14px;
   min-width: 40px;
   height: 40px;
-  width: 40px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.3s ease;
+  flex-shrink: 0;
 }
 
 .btn-remove:hover {
   background: #ff5252;
+}
+
+.btn-remove:active {
+  background: #ff4444;
+}
+
+.btn-remove:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .empty-state {
@@ -136,6 +163,25 @@
   padding: 16px;
   font-size: 18px;
   margin-bottom: 12px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.3s ease;
+}
+
+.btn-primary {
+  background: #667eea;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #5568d3;
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .btn-outline {
@@ -149,10 +195,20 @@
   background: #f5f5f5;
 }
 
+.btn-outline:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .btn-secondary {
   background: #764ba2;
   color: white;
-  padding: 12px 24px;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.3s ease;
 }
 
 .btn-secondary:hover {
@@ -162,4 +218,117 @@
 .btn-secondary:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.error {
+  background: #f8d7da;
+  border: 1px solid #f5c6cb;
+  color: #721c24;
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+}
+
+/* Mobile improvements */
+@media (max-width: 600px) {
+  .create-game {
+    padding: 16px;
+  }
+
+  .create-game h1 {
+    font-size: 24px;
+    margin-bottom: 24px;
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  .form-group label {
+    font-size: 14px;
+    margin-bottom: 6px;
+  }
+
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
+    font-size: 16px;
+    padding: 12px;
+  }
+
+  .input-group {
+    display: flex;
+    gap: 8px;
+    flex-wrap: nowrap;
+  }
+
+  .input-group input {
+    flex: 1;
+    min-width: 0;
+    padding: 12px;
+    font-size: 16px;
+  }
+
+  .input-group button {
+    flex-shrink: 0;
+    min-width: 60px;
+    padding: 12px 12px;
+    font-size: 14px;
+  }
+
+  .player-item {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  .player-item span {
+    font-size: 14px;
+  }
+
+  .btn-remove {
+    min-width: 36px;
+    height: 36px;
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+
+  .btn-large {
+    padding: 14px;
+    font-size: 16px;
+  }
+
+  .settings-review {
+    padding: 16px;
+  }
+
+  .settings-review h3 {
+    font-size: 16px;
+    margin-bottom: 12px;
+  }
+
+  .settings-review p {
+    font-size: 14px;
+    margin: 6px 0;
+  }
+}
+
+@media (max-width: 400px) {
+  .create-game h1 {
+    font-size: 20px;
+  }
+
+  .input-group {
+    gap: 6px;
+  }
+
+  .input-group button {
+    min-width: 55px;
+    padding: 10px 8px;
+    font-size: 12px;
+  }
+
+  .btn-large {
+    padding: 12px;
+    font-size: 16px;
+  }
 }
