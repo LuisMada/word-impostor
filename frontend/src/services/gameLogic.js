@@ -1,136 +1,195 @@
 import { v4 as uuidv4 } from 'uuid'
 
-const LOBBIES_KEY = 'word_imposter_lobbies'
+const GAME_STATE_KEY = 'word_imposter_gameState'
 
 /**
- * Get all lobbies from localStorage
+ * Get current game state from localStorage
  */
-function getAllLobbies() {
-  const data = localStorage.getItem(LOBBIES_KEY)
-  return data ? JSON.parse(data) : new Map()
+function getGameState() {
+  const data = localStorage.getItem(GAME_STATE_KEY)
+  return data ? JSON.parse(data) : null
 }
 
 /**
- * Save lobbies to localStorage
+ * Save game state to localStorage
  */
-function saveLobbies(lobbies) {
-  localStorage.setItem(LOBBIES_KEY, JSON.stringify(Object.fromEntries(lobbies)))
+function saveGameState(state) {
+  localStorage.setItem(GAME_STATE_KEY, JSON.stringify(state))
 }
 
 /**
- * Generate a random 6-char lobby code
+ * Clear game state
  */
-export function generateLobbyCode() {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-  let code = ''
-  for (let i = 0; i < 6; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length))
+function clearGameState() {
+  localStorage.removeItem(GAME_STATE_KEY)
+}
+
+/**
+ * Create a new game
+ */
+export function createGame(playerNames, numImposters, genrePrompt) {
+  if (playerNames.length < 2) {
+    throw new Error('Need at least 2 players')
   }
-  return code
-}
 
-/**
- * Create a new lobby
- */
-export function createLobby(hostName, numImposters, genrePrompt) {
-  const lobbies = new Map(Object.entries(getAllLobbies()))
-  
-  const lobbyCode = generateLobbyCode()
-  const hostId = `player_${uuidv4()}`
+  if (numImposters >= playerNames.length) {
+    throw new Error('Too many imposters for player count')
+  }
 
-  const lobby = {
-    lobbyCode,
-    hostId,
-    status: 'waiting', // waiting | playing | ended
-    createdAt: new Date().toISOString(),
-    players: [
-      {
-        playerId: hostId,
-        name: hostName,
-        joinedAt: new Date().toISOString(),
-      },
-    ],
+  const gameId = `game_${uuidv4()}`
+  const players = playerNames.map((name, index) => ({
+    id: `player_${index}`,
+    name,
+    order: index,
+  }))
+
+  const gameState = {
+    gameId,
+    status: 'setup', // setup | playing | ended
+    players,
     settings: {
       numImposters,
       genrePrompt,
     },
-    gameState: null,
+    gameData: null, // Will be set when game starts
+    currentPlayerIndex: 0,
   }
 
-  lobbies.set(lobbyCode, lobby)
-  saveLobbies(lobbies)
-
-  console.log(`✅ Lobby created: ${lobbyCode}`)
-  return lobby
+  saveGameState(gameState)
+  return gameState
 }
 
 /**
- * Join an existing lobby
+ * Start the game (assign roles)
  */
-export function joinLobby(lobbyCode, playerName) {
-  const lobbies = new Map(Object.entries(getAllLobbies()))
-  const lobby = lobbies.get(lobbyCode)
-
-  if (!lobby) {
-    throw new Error('Lobby not found')
+export function startGame(secretWord) {
+  const gameState = getGameState()
+  if (!gameState) {
+    throw new Error('No game in progress')
   }
 
-  if (lobby.status === 'playing') {
-    throw new Error('Game has already started. Cannot join.')
+  if (gameState.status !== 'setup') {
+    throw new Error('Game already started')
   }
 
-  const playerId = `player_${uuidv4()}`
-  const player = {
-    playerId,
-    name: playerName,
-    joinedAt: new Date().toISOString(),
+  const playerIds = gameState.players.map(p => p.id)
+  const imposters = selectImposters(playerIds, gameState.settings.numImposters)
+  const roles = generateRoles(playerIds, imposters, secretWord)
+
+  gameState.status = 'playing'
+  gameState.currentPlayerIndex = 0
+  gameState.gameData = {
+    secretWord,
+    imposters,
+    roles,
+    startedAt: new Date().toISOString(),
   }
 
-  lobby.players.push(player)
-  lobbies.set(lobbyCode, lobby)
-  saveLobbies(lobbies)
-
-  console.log(`✅ Player joined lobby ${lobbyCode}: ${playerName}`)
-  return { ...lobby, playerId }
+  saveGameState(gameState)
+  console.log(`🎮 Game started with ${gameState.players.length} players`)
+  return gameState
 }
 
 /**
- * Get lobby by code
+ * Get current player's role
  */
-export function getLobby(lobbyCode) {
-  const lobbies = new Map(Object.entries(getAllLobbies()))
-  const lobby = lobbies.get(lobbyCode)
-
-  if (!lobby) {
-    throw new Error('Lobby not found')
+export function getCurrentPlayerRole() {
+  const gameState = getGameState()
+  if (!gameState || gameState.status !== 'playing') {
+    throw new Error('Game not in progress')
   }
 
-  return lobby
+  const currentPlayer = gameState.players[gameState.currentPlayerIndex]
+  const role = gameState.gameData.roles[currentPlayer.id]
+  
+  return {
+    playerName: currentPlayer.name,
+    role,
+    currentIndex: gameState.currentPlayerIndex,
+    totalPlayers: gameState.players.length,
+  }
 }
 
 /**
- * Randomly select N imposters from players
+ * Move to next player
+ */
+export function nextPlayer() {
+  const gameState = getGameState()
+  if (!gameState || gameState.status !== 'playing') {
+    throw new Error('Game not in progress')
+  }
+
+  gameState.currentPlayerIndex += 1
+  saveGameState(gameState)
+
+  const isLastPlayer = gameState.currentPlayerIndex >= gameState.players.length
+  return {
+    isLastPlayer,
+    currentIndex: gameState.currentPlayerIndex,
+    totalPlayers: gameState.players.length,
+  }
+}
+
+/**
+ * End the game
+ */
+export function endGame() {
+  const gameState = getGameState()
+  if (!gameState) {
+    throw new Error('No game in progress')
+  }
+
+  gameState.status = 'ended'
+  saveGameState(gameState)
+  console.log('⏹️  Game ended')
+  return gameState
+}
+
+/**
+ * Get current game state
+ */
+export function getGame() {
+  return getGameState()
+}
+
+/**
+ * Reset to setup (same players, new roles)
+ */
+export function resetToSetup() {
+  const gameState = getGameState()
+  if (!gameState) {
+    throw new Error('No game in progress')
+  }
+
+  gameState.status = 'setup'
+  gameState.currentPlayerIndex = 0
+  gameState.gameData = null
+
+  saveGameState(gameState)
+  return gameState
+}
+
+/**
+ * Delete entire game
+ */
+export function deleteGame() {
+  clearGameState()
+}
+
+// ============ Helper Functions ============
+
+/**
+ * Randomly select N imposters from player IDs
  */
 function selectImposters(playerIds, numImposters) {
-  if (numImposters >= playerIds.length) {
-    throw new Error('Number of imposters must be less than total players')
-  }
-
   const shuffled = [...playerIds].sort(() => Math.random() - 0.5)
   return shuffled.slice(0, numImposters)
 }
 
 /**
- * Select a random first speaker
- */
-function selectFirstSpeaker(playerIds) {
-  return playerIds[Math.floor(Math.random() * playerIds.length)]
-}
-
-/**
  * Generate role assignments for all players
  */
-function generateRoles(playerIds, imposters, secretWord, firstSpeaker) {
+function generateRoles(playerIds, imposters, secretWord) {
   const roles = {}
 
   playerIds.forEach((playerId) => {
@@ -139,111 +198,14 @@ function generateRoles(playerIds, imposters, secretWord, firstSpeaker) {
       roles[playerId] = {
         type: 'imposter',
         teammates,
-        isFirstSpeaker: playerId === firstSpeaker,
       }
     } else {
       roles[playerId] = {
         type: 'wordHolder',
         word: secretWord,
-        isFirstSpeaker: playerId === firstSpeaker,
       }
     }
   })
 
   return roles
-}
-
-/**
- * Start a game in a lobby
- */
-export function startGame(lobbyCode, secretWord) {
-  const lobbies = new Map(Object.entries(getAllLobbies()))
-  const lobby = lobbies.get(lobbyCode)
-
-  if (!lobby) {
-    throw new Error('Lobby not found')
-  }
-
-  if (lobby.status !== 'waiting') {
-    throw new Error('Game is not in waiting state')
-  }
-
-  if (lobby.players.length < 2) {
-    throw new Error('Need at least 2 players to start')
-  }
-
-  if (lobby.settings.numImposters >= lobby.players.length) {
-    throw new Error('Too many imposters for player count')
-  }
-
-  // Get all player IDs
-  const playerIds = lobby.players.map(p => p.playerId)
-
-  // Assign imposters
-  const imposters = selectImposters(playerIds, lobby.settings.numImposters)
-
-  // Select first speaker
-  const firstSpeaker = selectFirstSpeaker(playerIds)
-
-  // Generate roles for all players
-  const roles = generateRoles(playerIds, imposters, secretWord, firstSpeaker)
-
-  // Update lobby
-  lobby.status = 'playing'
-  lobby.gameState = {
-    secretWord,
-    imposters,
-    firstSpeaker,
-    roles,
-    startedAt: new Date().toISOString(),
-  }
-
-  lobbies.set(lobbyCode, lobby)
-  saveLobbies(lobbies)
-
-  console.log(`🎮 Game started in lobby ${lobbyCode}`)
-  console.log(`   Imposters: ${imposters.length}`)
-  console.log(`   First speaker: ${lobby.players.find(p => p.playerId === firstSpeaker)?.name}`)
-
-  return lobby
-}
-
-/**
- * End a game in a lobby
- */
-export function endGame(lobbyCode) {
-  const lobbies = new Map(Object.entries(getAllLobbies()))
-  const lobby = lobbies.get(lobbyCode)
-
-  if (!lobby) {
-    throw new Error('Lobby not found')
-  }
-
-  lobby.status = 'waiting'
-  lobby.gameState = null
-
-  lobbies.set(lobbyCode, lobby)
-  saveLobbies(lobbies)
-
-  console.log(`⏹️  Game ended in lobby ${lobbyCode}`)
-
-  return lobby
-}
-
-/**
- * Get player's role in a game
- */
-export function getPlayerRole(playerId, lobbyCode) {
-  const lobby = getLobby(lobbyCode)
-
-  if (lobby.status !== 'playing' || !lobby.gameState) {
-    throw new Error('Game is not active')
-  }
-
-  const role = lobby.gameState.roles[playerId]
-  if (!role) {
-    throw new Error('Role not found')
-  }
-
-  return role
 }

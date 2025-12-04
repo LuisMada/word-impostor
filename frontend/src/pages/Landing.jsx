@@ -12,15 +12,9 @@ export default function Landing() {
       <div className="button-group">
         <button 
           className="btn btn-primary"
-          onClick={() => navigate('/create-lobby')}
+          onClick={() => navigate('/create')}
         >
-          Create Lobby
-        </button>
-        <button 
-          className="btn btn-secondary"
-          onClick={() => navigate('/join-lobby')}
-        >
-          Join Lobby
+          Start New Game
         </button>
       </div>
     </div>

@@ -1,27 +1,23 @@
 import { useState } from 'react'
 import './RoleCard.css'
 
-export default function RoleCard({ playerName, role, isRevealed, onReveal, onHide }) {
+export default function RoleCard({ role }) {
   const [isPressed, setIsPressed] = useState(false)
 
   const handleMouseDown = () => {
     setIsPressed(true)
-    onReveal()
   }
 
   const handleMouseUp = () => {
     setIsPressed(false)
-    onHide()
   }
 
   const handleTouchStart = () => {
     setIsPressed(true)
-    onReveal()
   }
 
   const handleTouchEnd = () => {
     setIsPressed(false)
-    onHide()
   }
 
   const isImposter = role?.type === 'imposter'
@@ -29,17 +25,16 @@ export default function RoleCard({ playerName, role, isRevealed, onReveal, onHid
 
   return (
     <div
-      className={`role-card ${isPressed ? 'pressed' : ''} ${isRevealed ? 'revealed' : ''}`}
+      className={`role-card ${isPressed ? 'pressed' : ''}`}
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      {!isRevealed ? (
+      {!isPressed ? (
         <div className="card-front">
-          <div className="player-name">{playerName}</div>
-          <div className="hint">Hold to reveal role</div>
+          <div className="hint">Hold to reveal your role</div>
         </div>
       ) : (
         <div className="card-back">
