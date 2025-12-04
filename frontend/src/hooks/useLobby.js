@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
-import { lobbyAPI, gameAPI, playerAPI } from '../services/api'
+import * as gameLogic from '../services/gameLogic'
+import { generateSecretWord } from '../services/openai'
 
 export const useLobby = () => {
   const [lobbyData, setLobbyData] = useState(null)
@@ -10,11 +11,11 @@ export const useLobby = () => {
     setLoading(true)
     setError(null)
     try {
-      const response = await lobbyAPI.create(hostName, numImposters, genrePrompt)
-      setLobbyData(response.data)
-      return response.data
+      const lobby = gameLogic.createLobby(hostName, numImposters, genrePrompt)
+      setLobbyData(lobby)
+      return lobby
     } catch (err) {
-      const message = err.response?.data?.message || err.message || 'Failed to create lobby'
+      const message = err.message || 'Failed to create lobby'
       setError(message)
       throw err
     } finally {
@@ -26,11 +27,11 @@ export const useLobby = () => {
     setLoading(true)
     setError(null)
     try {
-      const response = await lobbyAPI.join(lobbyCode, playerName)
-      setLobbyData(response.data)
-      return response.data
+      const result = gameLogic.joinLobby(lobbyCode, playerName)
+      setLobbyData(result)
+      return result
     } catch (err) {
-      const message = err.response?.data?.message || err.message || 'Failed to join lobby'
+      const message = err.message || 'Failed to join lobby'
       setError(message)
       throw err
     } finally {
@@ -42,11 +43,11 @@ export const useLobby = () => {
     setLoading(true)
     setError(null)
     try {
-      const response = await lobbyAPI.get(lobbyCode)
-      setLobbyData(response.data)
-      return response.data
+      const lobby = gameLogic.getLobby(lobbyCode)
+      setLobbyData(lobby)
+      return lobby
     } catch (err) {
-      const message = err.response?.data?.message || err.message || 'Failed to fetch lobby'
+      const message = err.message || 'Failed to fetch lobby'
       setError(message)
       throw err
     } finally {
@@ -58,11 +59,17 @@ export const useLobby = () => {
     setLoading(true)
     setError(null)
     try {
-      const response = await gameAPI.start(lobbyCode)
-      setLobbyData(response.data)
-      return response.data
+      // Generate secret word from OpenAI
+      const lobby = gameLogic.getLobby(lobbyCode)
+      console.log(`🤖 Generating word for: "${lobby.settings.genrePrompt}"`)
+      const secretWord = await generateSecretWord(lobby.settings.genrePrompt)
+      
+      // Start game with secret word
+      const updatedLobby = gameLogic.startGame(lobbyCode, secretWord)
+      setLobbyData(updatedLobby)
+      return updatedLobby
     } catch (err) {
-      const message = err.response?.data?.message || err.message || 'Failed to start game'
+      const message = err.message || 'Failed to start game'
       setError(message)
       throw err
     } finally {
@@ -74,11 +81,11 @@ export const useLobby = () => {
     setLoading(true)
     setError(null)
     try {
-      const response = await gameAPI.end(lobbyCode)
-      setLobbyData(response.data)
-      return response.data
+      const lobby = gameLogic.endGame(lobbyCode)
+      setLobbyData(lobby)
+      return lobby
     } catch (err) {
-      const message = err.response?.data?.message || err.message || 'Failed to end game'
+      const message = err.message || 'Failed to end game'
       setError(message)
       throw err
     } finally {
@@ -90,10 +97,10 @@ export const useLobby = () => {
     setLoading(true)
     setError(null)
     try {
-      const response = await playerAPI.getRole(playerId, lobbyCode)
-      return response.data
+      const role = gameLogic.getPlayerRole(playerId, lobbyCode)
+      return role
     } catch (err) {
-      const message = err.response?.data?.message || err.message || 'Failed to fetch role'
+      const message = err.message || 'Failed to fetch role'
       setError(message)
       throw err
     } finally {
