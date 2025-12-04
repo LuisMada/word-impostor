@@ -1,0 +1,106 @@
+.game-screen {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.game-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.game-header h1 {
+  margin-bottom: 12px;
+  color: #333;
+}
+
+.game-info {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.code {
+  background: #f0f0f0;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-family: 'Monaco', 'Courier', monospace;
+  font-weight: 700;
+  color: #333;
+  font-size: 18px;
+  letter-spacing: 2px;
+}
+
+.badge-first {
+  background: #28a745;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.game-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.btn-danger {
+  background: #dc3545;
+  color: white;
+}
+
+.btn-danger:hover {
+  background: #c82333;
+}
+
+.btn-large {
+  padding: 18px 32px;
+  font-size: 18px;
+}
+
+.players-info {
+  background: #f9f9f9;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+.players-info h3 {
+  margin-bottom: 16px;
+  color: #333;
+}
+
+.other-players {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.other-player {
+  background: white;
+  padding: 12px;
+  border-radius: 6px;
+  text-align: center;
+  font-weight: 600;
+  color: #333;
+  border: 2px solid #eee;
+}
+
+.btn-outline {
+  width: 100%;
+}
+
+@media (max-width: 600px) {
+  .game-info {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .other-players {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

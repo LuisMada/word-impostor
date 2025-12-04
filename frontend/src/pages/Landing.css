@@ -1,0 +1,60 @@
+.landing {
+  text-align: center;
+}
+
+.landing h1 {
+  font-size: 48px;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.landing .subtitle {
+  font-size: 18px;
+  color: #666;
+  margin-bottom: 40px;
+}
+
+.button-group {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn {
+  min-width: 200px;
+  padding: 16px 32px;
+  font-size: 18px;
+}
+
+.btn-primary {
+  background: #667eea;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #5568d3;
+}
+
+.btn-secondary {
+  background: #764ba2;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #63408a;
+}
+
+@media (max-width: 600px) {
+  .landing h1 {
+    font-size: 32px;
+  }
+
+  .button-group {
+    flex-direction: column;
+  }
+
+  .btn {
+    width: 100%;
+  }
+}
