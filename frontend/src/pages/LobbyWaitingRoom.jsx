@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { useLobby } from '../hooks/useLobby'
 import { usePlayer } from '../hooks/usePlayer'
+import * as gameLogic from '../services/gameLogic'
 import './LobbyWaitingRoom.css'
 
 export default function LobbyWaitingRoom() {
@@ -11,35 +12,92 @@ export default function LobbyWaitingRoom() {
   const { playerId } = usePlayer()
   const { lobbyData, fetchLobby, startGame, loading, error } = useLobby()
   const [pollingInterval, setPollingInterval] = useState(null)
+  const [needsJoin, setNeedsJoin] = useState(false)
 
   const isHost = searchParams.get('isHost') === 'true'
 
   useEffect(() => {
-    // Initial fetch
-    fetchLobby(lobbyCode)
+    try {
+      // Check if this player is in the lobby
+      const lobby = gameLogic.getLobby(lobbyCode)
+      const playerInLobby = lobby.players.some(p => p.playerId === playerId)
+      
+      if (!playerInLobby && !isHost) {
+        // Player not in lobby, but not the host
+        setNeedsJoin(true)
+        return
+      }
 
-    // Poll for lobby updates every 2 seconds
-    const interval = setInterval(() => {
+      // Fetch initial lobby state
       fetchLobby(lobbyCode)
-    }, 2000)
 
-    setPollingInterval(interval)
+      // Poll for updates
+      const interval = setInterval(() => {
+        fetchLobby(lobbyCode)
+      }, 1000)
 
-    return () => {
-      if (interval) clearInterval(interval)
+      setPollingInterval(interval)
+
+      return () => {
+        if (interval) clearInterval(interval)
+      }
+    } catch (err) {
+      console.error('Error loading lobby:', err)
     }
-  }, [lobbyCode])
+  }, [lobbyCode, playerId])
 
   const handleStartGame = async () => {
     try {
       await startGame(lobbyCode)
-      // Redirect to game screen after a short delay
       setTimeout(() => {
         navigate(`/game/${lobbyCode}${isHost ? '?isHost=true' : ''}`)
       }, 500)
     } catch (err) {
       console.error('Error starting game:', err)
     }
+  }
+
+  if (needsJoin) {
+    return (
+      <div className="container lobby-waiting-room">
+        <h1>Join This Lobby?</h1>
+        <p style={{ marginBottom: '20px', color: '#666' }}>
+          Lobby Code: <strong>{lobbyCode}</strong>
+        </p>
+        <div className="form-group">
+          <input
+            type="text"
+            id="playerName"
+            placeholder="Enter your name to join"
+            maxLength="50"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && e.target.value.trim()) {
+                gameLogic.joinLobby(lobbyCode, e.target.value.trim())
+                window.location.reload()
+              }
+            }}
+          />
+        </div>
+        <button
+          className="btn btn-primary"
+          onClick={(e) => {
+            const input = document.querySelector('#playerName')
+            if (input.value.trim()) {
+              gameLogic.joinLobby(lobbyCode, input.value.trim())
+              window.location.reload()
+            }
+          }}
+        >
+          Join Lobby
+        </button>
+        <button 
+          className="btn btn-outline"
+          onClick={() => navigate('/')}
+        >
+          Back
+        </button>
+      </div>
+    )
   }
 
   if (!lobbyData) {
@@ -110,6 +168,20 @@ export default function LobbyWaitingRoom() {
           Waiting for host to start the game...
         </div>
       )}
+
+      {/* Share Link Button */}
+      <div style={{ marginTop: '20px', textAlign: 'center' }}>
+        <button
+          className="btn btn-outline"
+          onClick={() => {
+            const shareUrl = `${window.location.origin}/lobby/${lobbyCode}`
+            navigator.clipboard.writeText(shareUrl)
+            alert('Lobby link copied to clipboard!')
+          }}
+        >
+          📋 Copy Lobby Link
+        </button>
+      </div>
 
       <button 
         className="btn btn-outline"

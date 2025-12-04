@@ -32,6 +32,7 @@ export default function CreateLobby() {
         formData.genrePrompt
       )
       saveCurrentLobby(result.lobbyCode)
+      // Redirect to lobby with isHost flag in URL
       navigate(`/lobby/${result.lobbyCode}?isHost=true`)
     } catch (err) {
       console.error('Error creating lobby:', err)
